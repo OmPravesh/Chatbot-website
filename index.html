@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot Project</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        body { font-family: sans-serif; background: #f0f2f5; display: flex; justify-content: center; padding: 20px; }
+        .app-container { width: 400px; height: 500px; background: white; border-radius: 8px; display: flex; flex-direction: column; box-shadow: 0 4px 12px rgba(0,0,0,0.1); overflow: hidden; }
+        .chat-messages-container { flex: 1; padding: 20px; overflow-y: auto; background: #fff; }
+        .chat-message-robot, .chat-message-user { display: flex; align-items: center; margin-bottom: 15px; }
+        .chat-message-user { flex-direction: row-reverse; }
+        .chat-message-text { padding: 10px; border-radius: 10px; max-width: 70%; font-size: 14px; margin: 0 10px; }
+        .chat-message-robot .chat-message-text { background: #e4e6eb; color: black; }
+        .chat-message-user .chat-message-text { background: #0084ff; color: white; }
+        .chat-message-profile { width: 35px; height: 35px; border-radius: 50%; background: #ddd; }
+        .chat-input-container { display: flex; padding: 10px; border-top: 1px solid #eee; }
+        .chat-input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px; outline: none; }
+        .send-button { background: #0084ff; color: white; border: none; padding: 0 15px; margin-left: 5px; border-radius: 4px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // BOT LOGIC (Reconstructed from your 'Chatbot' variable)
+        const ChatbotEngine = {
+            responses: {
+                "hello": "Hello! How can I help you?",
+                "how are you": "I'm doing great! How can I help you?",
+                "date": () => `Today is ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}`,
+                "flip a coin": () => Math.random() < 0.5 ? "Sure! You got heads" : "Sure! You got tails",
+                "roll a dice": () => `Sure! You got ${Math.floor(Math.random() * 6) + 1}`,
+                "thank": "No problem! Let me know if you need help with anything else!"
+            },
+            getResponse(input) {
+                const text = input.toLowerCase();
+                if (text.includes("date")) return this.responses["date"]();
+                if (text.includes("coin")) return this.responses["flip a coin"]();
+                if (text.includes("dice")) return this.responses["roll a dice"]();
+                if (text.includes("hello")) return this.responses["hello"];
+                if (text.includes("thank")) return this.responses["thank"];
+                return "Sorry, I didn't quite understand that. Try asking for the date or flipping a coin!";
+            }
+        };
+
+        // COMPONENTS
+        function Message({ message, sender }) {
+            // FIXED: Using public URLs for images
+            const robotImg = "https://cdn-icons-png.flaticon.com/512/4712/4712035.png";
+            const userImg = "https://cdn-icons-png.flaticon.com/512/1144/1144760.png";
+
+            return (
+                <div className={sender === "user" ? "chat-message-user" : "chat-message-robot"}>
+                    <img src={sender === "robot" ? robotImg : userImg} className="chat-message-profile" alt="profile" />
+                    <div className="chat-message-text">{message}</div>
+                </div>
+            );
+        }
+
+        function ChatInput({ onSendMessage }) {
+            const [input, setInput] = useState("");
+            return (
+                <div className="chat-input-container">
+                    <input 
+                        className="chat-input"
+                        placeholder="Send a message to chatbot"
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && (onSendMessage(input), setInput(""))}
+                    />
+                    <button className="send-button" onClick={() => { onSendMessage(input); setInput(""); }}>Send</button>
+                </div>
+            );
+        }
+
+        function App() {
+            const [chatMessages, setChatMessages] = useState([
+                { message: "hello bot", sender: "user", id: "id1" },
+                { message: "Hello! How can I help you?", sender: "robot", id: "id2" }
+            ]);
+            const scrollRef = useRef(null);
+
+            useEffect(() => {
+                if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+            }, [chatMessages]);
+
+            const handleSendMessage = (text) => {
+                if (!text.trim()) return;
+                const userMsg = { message: text, sender: "user", id: crypto.randomUUID() };
+                const botReply = { message: ChatbotEngine.getResponse(text), sender: "robot", id: crypto.randomUUID() };
+                setChatMessages([...chatMessages, userMsg, botReply]);
+            };
+
+            return (
+                <div className="app-container">
+                    <div className="chat-messages-container" ref={scrollRef}>
+                        {chatMessages.map(msg => <Message key={msg.id} {...msg} />)}
+                    </div>
+                    <ChatInput onSendMessage={handleSendMessage} />
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById("root"));
+        root.render(<App />);
+    </script>
+</body>
+</html>
